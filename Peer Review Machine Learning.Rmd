@@ -1,0 +1,108 @@
+---
+title: "Peer Review - Machine Learning"
+author: "André Ferreira"
+date: "9/23/2018"
+output: html_document
+---
+
+
+## 1.Loading the data set
+
+setwd("~/ProgAssignment - Machine Learning")
+training_raw <- read.csv("pml-training.csv")
+testing_raw <- read.csv("pml-testing.csv")
+
+## 2.Look at data
+
+head(training_raw)
+summary(training_raw)
+dim(training_raw)
+dim(testing_raw)
+
+## 3. Load the packages
+
+library(caret)
+library(lattice)
+library(ggplot2)
+
+## 4. Cleaning Data 
+
+  #cleaning the data with little variance 
+
+NZV <- nearZeroVar(training_raw)
+training <- training_raw[, -NZV]
+testing <- testing_raw[, -NZV]
+
+  #Remove the columns with many NA
+
+NA_values <- sapply(training, function(x) mean(is.na(x))) > 0.95
+training <- training[, NA_values == "FALSE"]
+testing <- testing[, NA_values == "FALSE"]
+
+  #remove id and Name
+training <- training[,-c(1:2)]
+testing <- testing[,-c(1:2)]
+
+## 5. Create data partions
+
+inTrain <- createDataPartition(y = training$classe, p = 3/4, list = FALSE)
+training <- training[inTrain, ]
+validation <- training[-inTrain, ]
+
+
+## 5. Create data partions
+
+inTrain <- createDataPartition(y = training$classe, p = 3/4, list = FALSE)
+training <- training[inTrain, ]
+validation <- training[-inTrain, ]
+
+## 6. Testing Model in Random Forest 
+
+Model1 <- train(classe~., data = training, method = "rf", ntree = 100)
+Pred1 <- predict(Model1, validation)
+  
+## 7. Check model performance
+Confusion_Predict <- confusionMatrix(Pred1, validation$classe)
+
+Confusion_Predict
+
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    A    B    C    D    E
+         A 1029    0    0    0    0
+         B    0  729    0    0    0
+         C    0    0  643    0    0
+         D    0    0    0  612    0
+         E    0    0    0    0  671
+
+Overall Statistics
+                                    
+               Accuracy : 1         
+                 95% CI : (0.999, 1)
+    No Information Rate : 0.2793    
+    P-Value [Acc > NIR] : < 2.2e-16 
+                                    
+                  Kappa : 1         
+ Mcnemar's Test P-Value : NA        
+
+Statistics by Class:
+
+                     Class: A Class: B Class: C Class: D Class: E
+Sensitivity            1.0000   1.0000   1.0000   1.0000   1.0000
+Specificity            1.0000   1.0000   1.0000   1.0000   1.0000
+Pos Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+Neg Pred Value         1.0000   1.0000   1.0000   1.0000   1.0000
+Prevalence             0.2793   0.1979   0.1745   0.1661   0.1821
+Detection Rate         0.2793   0.1979   0.1745   0.1661   0.1821
+Detection Prevalence   0.2793   0.1979   0.1745   0.1661   0.1821
+Balanced Accuracy      1.0000   1.0000   1.0000   1.0000   1.0000
+
+## 8. Conclusion
+
+By looking to the confusionMatrix is possible to see the accuracy extreme high therefore I am going to use random forest model to predict the testing data set.
+
+## 9. Predict on testing data set
+
+Pred_test <- predict(Model1, testing)
+Pred_test
